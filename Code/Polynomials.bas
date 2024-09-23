@@ -5,28 +5,32 @@ Attribute VB_Name = "Polynomials"
 
 Public Function EvaluatePolynomial(polyCoefficients As Range, ByVal x As Double) As Double
 
-    Dim vals() As Variant: vals = polyCoefficients.value
-    Dim a() As Double
-    ReDim a(LBound(vals, 1) To UBound(vals, 1))
-    Dim i As Long
-    For i = LBound(vals, 1) To UBound(vals, 1)
-        a(i) = CDbl(vals(i, 1))
-    Next i
-    
-    
-    EvaluatePolynomial = ComputePolynomial(a, x)
+    Dim A() As Double
+    ConvertRangeToDoubleArray1D polyCoefficients, A
+    EvaluatePolynomial = ComputePolynomial(A, x)
     
 End Function
 
-Public Function ComputePolynomial(a() As Double, ByVal x As Double) As Double
+Public Sub ConvertRangeToDoubleArray1D(data As Range, array1D() As Double)
+
+    Dim vals() As Variant: vals = data.value
+    ReDim array1D(0 To UBound(vals, 1) - LBound(vals, 1)) As Double
+    
+    For i = LBound(vals, 1) To UBound(vals, 1)
+        array1D(i - 1) = CDbl(vals(i, 1))
+    Next i
+    
+End Sub
+
+Public Function ComputePolynomial(A() As Double, ByVal x As Double) As Double
 
     ' compute polynomial value
     Dim i As Long
-    Dim nUpper As Long: nUpper = UBound(a)
-    Dim nLower As Long: nLower = LBound(a)
-    Dim value As Double: value = a(nUpper)
+    Dim nUpper As Long: nUpper = UBound(A)
+    Dim nLower As Long: nLower = LBound(A)
+    Dim value As Double: value = A(nUpper)
     For i = nUpper - 1 To nLower Step -1
-        value = x * value + a(i)
+        value = x * value + A(i)
     Next i
     
     ComputePolynomial = value
@@ -36,28 +40,28 @@ End Function
 'Perform Least Squares Regression Analysis on the data specified by the input range cells
 ' place the computed coefficients into the spreadsheet in the range specified by the output coefficients
 '
-Public Function ComputeLeastSquaresRegression(ByVal degree As Long, ByVal inputRangeX As Range, ByVal inputRangeY) As Variant
-    If degree >= 1 Then
+Public Function ComputeLeastSquaresRegression(ByVal Degree As Long, ByVal inputRangeX As Range, ByVal inputRangeY) As Variant
+    If Degree >= 1 Then
     
         Dim inputXData As Variant: inputXData = inputRangeX.value
         Dim inputYData As Variant: inputYData = inputRangeY.value
         Dim outputs As Variant
         Dim inputX() As Double, inputY() As Double
-        ConvertRangeToArray inputXData, inputX
-        ConvertRangeToArray inputYData, inputY
+        ConvertRangeToArray2D inputXData, inputX
+        ConvertRangeToArray2D inputYData, inputY
         
         Dim coefficients As Variant
         Dim rData As Variant
         
-        If degree = 1 Then
+        If Degree = 1 Then
         
             rData = FitPolynomial1(inputX, inputY)
         Else
             Dim powers() As Long
-            ReDim powers(1 To degree) As Long
+            ReDim powers(1 To Degree) As Long
             
             Dim i As Long
-            For i = 1 To degree
+            For i = 1 To Degree
                 powers(i) = i
             Next i
             
@@ -65,7 +69,7 @@ Public Function ComputeLeastSquaresRegression(ByVal degree As Long, ByVal inputR
             
         End If
         
-        coefficients = PolynomialCoefficients(rData, degree)
+        coefficients = PolynomialCoefficients(rData, Degree)
         ComputeLeastSquaresRegression = coefficients
     Else
         ComputeLeastSquaresRegression = ""
@@ -81,29 +85,28 @@ Public Function FitPolynomial1(inputX() As Double, inputY() As Double) As Varian
 End Function
 
 
-
 Public Function FitPolynomial(inputX() As Double, inputY() As Double, powers As Variant) As Variant
     FitPolynomial = Application.LinEst(inputY, Application.Power(inputX, powers), True, True)
 End Function
 
 
-Public Function PolynomialCoefficients(rData As Variant, ByVal degree As Long) As Variant
+Public Function PolynomialCoefficients(rData As Variant, ByVal Degree As Long) As Variant
 
-    Dim a() As Double
-    ReDim a(1 To degree + 2, 1 To 1) As Double
+    Dim A() As Double
+    ReDim A(1 To Degree + 2, 1 To 1) As Double
     Dim dataIndex As Double: dataIndex = UBound(rData, 2)
     Dim i As Long
-    a(1, 1) = rData(3, 1)
-    For i = LBound(a) + 1 To UBound(a)
-        a(i, 1) = rData(1, dataIndex)
+    A(1, 1) = rData(3, 1)
+    For i = LBound(A) + 1 To UBound(A)
+        A(i, 1) = rData(1, dataIndex)
         dataIndex = dataIndex - 1
     Next i
     
-    PolynomialCoefficients = a
+    PolynomialCoefficients = A
     
 End Function
 
-Private Sub ConvertRangeToArray(data As Variant, dataArray2D() As Double)
+Public Sub ConvertRangeToArray2D(data As Variant, dataArray2D() As Double)
 
     ReDim dataArray2D(LBound(data, 1) To UBound(data, 1), LBound(data, 2) To UBound(data, 2))
     Dim row As Long, col As Long
@@ -127,5 +130,63 @@ Public Function ResizeRange(inRange As Range, ByVal lbRows As Long, ByVal lbCols
     Set ResizeRange = newRange
 
 End Function
+
+Public Function ConstructPolynomialFromRange(polyCoefficients As Range) As CPolynomial
+
+    Dim vals() As Variant: vals = polyCoefficients.value
+    Dim A() As Double
+    ReDim A(LBound(vals, 1) To UBound(vals, 1))
+    Dim i As Long
+    For i = LBound(vals, 1) To UBound(vals, 1)
+        A(i) = CDbl(vals(i, 1))
+    Next i
+    
+    Set ConstructPolynomialFromRange = ConstructPolynomial(A)
+End Function
+
+Public Function ConstructPolynomial(A() As Double) As CPolynomial
+
+    Dim poly As New CPolynomial
+    Set ConstructPolynomial = poly.Initialize(A)
+End Function
+
+
+Public Function FindPolynomialDegree2Roots(poly2 As CPolynomial, roots() As Double) As Boolean
+
+    Dim a0 As Double: a0 = poly2.A(0)
+    Dim a1 As Double: a1 = poly2.A(1)
+    Dim a2 As Double: a2 = poly2.A(2)
+    ReDim roots(0 To 1) As Double
+    
+    Dim discriminant As Double: discriminant = a1 * a1 - 4# * a2 * a0
+    Dim r12 As Double: r12 = -a1 / (2 * a2)
+    If discriminant >= 0 Then
+        Dim r22 As Double: r22 = VBA.Math.Sqr(discriminant) / (2 * a2)
+        roots(0) = r12 + r22
+        roots(1) = r12 - r22
+        FindPolynomialDegree2Roots = True
+        Exit Function
+    End If
+    
+    FindPolynomialDegree2Roots = False
+    
+End Function
+
+Public Function FindPolynomialRoots(poly As CPolynomial, ByVal xStart As Double, ByVal xEnd As Double, ByVal xStep As Double, ByVal tolerance As Double, roots() As Double) As Boolean
+
+    Dim dPoly As CPolynomial: Set dPoly = poly.FirstDerivative()
+    If dPoly Is Nothing Then
+        FindPolynomialRoots = False
+        Exit Function
+    End If
+    
+    ' bracket the zero crossings of the polynomial within the specified range
+    ' use the midpoint of the bracketed range as the starting point for Newton-Raphson root finding
+    ' we won't worry about complex roots here
+    
+
+End Function
+
+
 
 

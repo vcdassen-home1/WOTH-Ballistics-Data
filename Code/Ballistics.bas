@@ -1,14 +1,14 @@
 Attribute VB_Name = "Ballistics"
 Option Explicit
 
-Public Function TrajectoryDropInCM(ByVal elevationScopeUnits As Double, ByVal rangeInMeters As Double, ByVal scopeUnitsToMilsScale As Double) As Double
+Public Function TrajectoryInCM(ByVal elevationScopeUnits As Double, ByVal rangeInMeters As Double, ByVal scopeUnitsToMilsScale As Double) As Double
 
     Dim elevationMils As Double: elevationMils = elevationScopeUnits * scopeUnitsToMilsScale
     Dim elevationRadians As Double: elevationRadians = elevationMils / 1000#
     Dim elevationSign As Double: elevationSign = VBA.Math.Sgn(elevationRadians) * 1#
     Dim dropInM As Double: dropInM = rangeInMeters * VBA.Math.Tan(VBA.Math.Abs(elevationRadians)) * elevationSign
     
-    TrajectoryDropInCM = dropInM * 100#   ' m * cm/m
+    TrajectoryInCM = dropInM * 100#   ' m * cm/m
 
 End Function
 
@@ -106,4 +106,31 @@ Public Function MuzzleVelocityToMuzzleEnergyFtLb(ByVal muzzleVelocityFPS As Doub
 
 End Function
 
+
+
+Public Function MuzzleVelocityToMuzzleEnergy(ByVal bulletWeight As Double, ByVal unitsWeight As String, ByVal muzzleVelocity As Double, ByVal velocityUnits As String, ByVal toUnits As String) As Double
+    
+    Dim bulletMassGrams As Double: bulletMassGrams = ConvertMassWeight(bulletWeight, unitsWeight, massUnitGrams)
+    Dim muzzleVelocityMPS As Double: muzzleVelocityMPS = ConvertSpeed(muzzleVelocity, velocityUnits, speedUnitMPS)
+    Dim muzzleEnergyJoules As Double: muzzleEnergyJoules = MuzzleVelocityToMuzzleEnergyJoules(muzzleVelocityMPS, bulletMassGrams)
+    
+    MuzzleVelocityToMuzzleEnergy = Application.WorksheetFunction.Convert(muzzleEnergyJoules, energyUnitJoules, toUnits)
+End Function
+
+
+Public Sub DeterminePointBlankRangeFromTrajectoryPolynomial(trajectoryCoefficients As Range, ByVal targetCircleDiameterCM As Double, minPBR As Double, maxPBR As Double)
+
+    Dim trajectory As CPolynomial: Set trajectory = ConstructPolynomialFromRange(trajectoryCoefficients)
+    Dim yMax As Double: yMax = targetCircleDiameterCM / 2#
+    Dim yMin As Double: yMin = -1# * yMax
+    
+    ' iterate forward from x = 0 to x = 1000m, in 0.5m steps
+    ' find the near and far points where the trajectory stays within the target circle
+    ' TODO: improve by finding the roots of the polynomial equation
+    
+    Dim x As Double: x = 0#
+    
+    
+
+End Sub
 

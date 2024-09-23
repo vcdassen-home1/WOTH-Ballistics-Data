@@ -1,0 +1,60 @@
+﻿Option Explicit
+
+Private Sub Worksheet_Change(ByVal Target As Range)
+
+    On Error GoTo eh
+
+    Application.EnableEvents = False
+
+    Debug.Print "Worksheet_Change: " & Target.Parent.Name & " Target Address: " & Target.Address
+
+    If Target.Address = "$B$2" Then
+       
+       ApplyCartridgeSelection Target.value, Target.Parent
+        
+    ElseIf Target.Address = "$B$15" Then
+    
+        Dim cartridgeName As String: cartridgeName = Target.Parent.Range("$B$2")
+        ApplyProjectileSelection Target.value, cartridgeName, Target.Parent
+    
+    ElseIf Target.Address = "B$23" Then
+    
+    Else
+        
+       
+    End If
+    
+eh:
+    
+    Application.EnableEvents = True
+    
+End Sub
+
+Private Sub ApplyCartridgeSelection(ByVal cartridgeName As String, ws As Worksheet)
+
+    Dim cartridgeLoadout As CCartridgeLoadoutDetail: Set cartridgeLoadout = CartridgeLoadoutDetail(cartridgeName)
+
+    If Not cartridgeLoadout Is Nothing Then
+        PopulateCartridgeLoadouts ws, cartridgeLoadout
+    Else
+        ClearCartridgeLoadouts ws
+    End If
+
+End Sub
+
+Private Sub ApplyProjectileSelection(ByVal projectileName As String, ByVal cartridgeName As String, ws As Worksheet)
+
+     Dim cartridgeLoadout As CCartridgeLoadoutDetail: Set cartridgeLoadout = CartridgeLoadoutDetail(cartridgeName)
+
+    If CoreLibrary.IsNotEmpty(projectileName) Then
+        PopulateAmmunitionLoadouts ws, projectileName, cartridgeLoadout
+    Else
+        ClearAmmunitionLoadouts ws
+    End If
+End Sub
+
+Private Sub Worksheet_SelectionChange(ByVal Target As Range)
+
+    Debug.Print "Worksheet_SelectionChange: " & Target.Parent.Name & " Target Address: " & Target.Address
+
+End Sub

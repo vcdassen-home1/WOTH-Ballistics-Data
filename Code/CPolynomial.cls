@@ -16,7 +16,6 @@ Private m_coefficients() As Double
 Public Function Initialize(coefficients() As Double) As CPolynomial
 
     m_coefficients = coefficients
-    ReDim Preserve m_coefficients(0 To CoreLibrary.SizeOf(coefficients) - 1)
     Set Initialize = Me
 End Function
 
@@ -50,6 +49,18 @@ Public Sub EvaluateRange(x() As Double, results() As Double)
         results(i, 1) = Me.EvaluateAt(x_i)
     Next i
 End Sub
+
+Public Function Evaluate(x() As Double) As Variant
+
+    Dim yValues() As Double
+    ReDim yValues(LBound(x, 1) To UBound(x, 1), 1 To 1)
+    Dim i As Long
+    For i = LBound(x, 1) To UBound(x, 1)
+        yValues(i, 1) = Me.EvaluateAt(x(i, 1))
+    Next i
+    Evaluate = yValues
+
+End Function
 
 Public Sub EvaluateSequence(ByVal xStart As Double, ByVal xEnd As Double, ByVal nPoints As Long, results() As Double)
 

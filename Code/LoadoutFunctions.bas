@@ -77,14 +77,14 @@ Public Function CartridgeLoadoutDetail(ByVal cartridgeName As String) As CCartri
         Exit Function
     End If
     
-    Dim ammunitionData As IVariantArray2D: Set ammunitionData = LoadTableData(ammoTableName, shLoadouts)
+    Dim ammunitionData As IVariantArray2D: Set ammunitionData = LoadTableData(ammoTableName, shAmmunitionData)
     If ammunitionData Is Nothing Then
         Set CartridgeLoadoutDetail = Nothing
         Exit Function
     End If
         
     
-    Dim rifleData As IVariantArray2D: Set rifleData = LoadTableData(rifleTblName, shLoadouts)
+    Dim rifleData As IVariantArray2D: Set rifleData = LoadTableData(rifleTblName, shRifleLoadouts)
     If rifleData Is Nothing Then
         Set CartridgeLoadoutDetail = Nothing
         Exit Function

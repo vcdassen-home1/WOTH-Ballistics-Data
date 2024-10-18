@@ -28,6 +28,7 @@ Public Function ComputePolynomial(A() As Double, ByVal x As Double) As Double
     Dim i As Long
     Dim nUpper As Long: nUpper = UBound(A)
     Dim nLower As Long: nLower = LBound(A)
+    
     Dim value As Double: value = A(nUpper)
     For i = nUpper - 1 To nLower Step -1
         value = x * value + A(i)
@@ -108,6 +109,7 @@ End Function
 
 Public Sub ConvertRangeToArray2D(data As Variant, dataArray2D() As Double)
 
+    ' first find only the non-empty rows
     ReDim dataArray2D(LBound(data, 1) To UBound(data, 1), LBound(data, 2) To UBound(data, 2))
     Dim row As Long, col As Long
     
@@ -133,6 +135,7 @@ End Function
 
 Public Function ConstructPolynomialFromRange(polyCoefficients As Range) As CPolynomial
 
+    ' skip empty rows
     Dim vals() As Variant: vals = polyCoefficients.value
     Dim A() As Double
     ReDim A(LBound(vals, 1) To UBound(vals, 1))
@@ -184,6 +187,54 @@ Public Function FindPolynomialRoots(poly As CPolynomial, ByVal xStart As Double,
     ' use the midpoint of the bracketed range as the starting point for Newton-Raphson root finding
     ' we won't worry about complex roots here
     
+
+End Function
+
+Public Function GenerateRangeAddress(ByVal rStart As Double, ByVal rStep As Double, ByVal nSteps As Long, output As Range) As String
+ 
+    ' calculate the output range
+    Dim addrComponents() As String: addrComponents = Split(output.Address, "$")
+    Dim outputCol As String: outputCol = addrComponents(1)
+    Dim outputRow As Long: outputRow = CLng(addrComponents(2))
+    Dim lastRow As Long: lastRow = outputRow + nSteps
+    
+    Dim builder As CStringBuilder: Set builder = StringBuilder(sDelimiter:="")
+    
+    With builder
+        .Append output.Address, ":"
+        .Append "$", outputCol
+        .Append "$", CStr(lastRow)
+    End With
+     
+    GenerateRangeAddress = builder.ToString()
+
+End Function
+
+Public Function GenerateRange(ByVal rStart As Double, ByVal rStep As Double, ByVal nSteps As Long) As Variant
+
+    Dim xValues() As Double
+    ReDim xValues(1 To nSteps + 1, 1 To 1) As Double
+    Dim i As Long
+    Dim x As Double
+    For i = 1 To nSteps + 1
+        x = rStart + rStep * (i - 1)
+        xValues(i, 1) = x
+    Next i
+    
+    GenerateRange = xValues
+
+
+End Function
+
+Public Function EvaluatePolynomialOverRange(polyCoefficients As Range, ByVal xValueRangeAddress As String) As Variant
+
+    Dim poly As CPolynomial: Set poly = ConstructPolynomialFromRange(polyCoefficients)
+    Dim xValues() As Double
+    Dim xValueRange As Range: Set xValueRange = ActiveSheet.Range(xValueRangeAddress)
+    ConvertRangeToArray2D xValueRange.value, xValues
+    Dim yValues() As Double: yValues = poly.Evaluate(xValues)
+    
+    EvaluatePolynomialOverRange = yValues
 
 End Function
 

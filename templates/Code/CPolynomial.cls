@@ -24,7 +24,7 @@ Public Property Get Degree() As Long
 End Property
 
 Public Property Get Extent() As CArrayExtent
-    Set Extents = CoreLibrary.Array1DExtent(m_coefficients)
+    Set Extent = CoreLibrary.Array1DExtent(m_coefficients)
 End Property
 
 Public Property Get A(ByVal i As Long) As Double

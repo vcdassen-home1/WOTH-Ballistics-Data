@@ -117,20 +117,89 @@ Public Function MuzzleVelocityToMuzzleEnergy(ByVal bulletWeight As Double, ByVal
     MuzzleVelocityToMuzzleEnergy = Application.WorksheetFunction.Convert(muzzleEnergyJoules, energyUnitJoules, toUnits)
 End Function
 
-
-Public Sub DeterminePointBlankRangeFromTrajectoryPolynomial(trajectoryCoefficients As Range, ByVal targetCircleDiameterCM As Double, minPBR As Double, maxPBR As Double)
+'
+'  generate a 2D Variant array that contains the point blank range results
+'
+Public Function PointBlankRangeListFromBallisticPolynomials(trajectoryCoefficients As Range, energyCoefficients As Range, ByVal targetCircleDiameterCM As Double, ByVal minRange As Double, ByVal rangeStep As Double, ByVal nSteps As Long) As Variant
 
     Dim trajectory As CPolynomial: Set trajectory = ConstructPolynomialFromRange(trajectoryCoefficients)
+    Dim energyCurve As CPolynomial: Set energyCurve = ConstructPolynomialFromRange(energyCoefficients)
+    Dim yMax As Double: yMax = targetCircleDiameterCM / 2#
+    Dim yMin As Double: yMin = -1# * yMax
+    Dim tracker As CTrajectoryTracker: Set tracker = TrajectoryTracker(nSteps, yMin, yMax)
+    
+    Dim pbrData As New ArrayList
+    
+    ' track the trajectory to look for the target crossings
+    Dim x As Double: x = minRange
+    Dim y As Double: y = 0#
+    Dim ke As Double: ke = 0#
+    Dim index As Long
+    For index = 1 To nSteps
+        y = trajectory.EvaluateAt(x)
+        ke = energyCurve.EvaluateAt(x)
+        tracker.TrackTrajectoryAndEnergy x, y, ke
+        x = x + rangeStep
+    Next index
+    
+    'now we can ask the trajectory tracker to find the target crossings, one by one
+    Dim crossingList As New ArrayList
+    tracker.FindCrossings crossingList
+    
+    'and evaluate the point blank range intervals
+    Dim pbrList As New ArrayList
+    tracker.BuildPointBlankRangeList crossingList, pbrList
+    
+    PointBlankRangeListFromBallisticPolynomials = OutputTable(pbrList)
+    
+End Function
+
+Public Function PointBlankRangeListFromBallisticsSolution(trajectoryX As Range, trajectoryY As Range, energyRange As Range, ByVal targetCircleDiameterCM As Double) As Variant
+
     Dim yMax As Double: yMax = targetCircleDiameterCM / 2#
     Dim yMin As Double: yMin = -1# * yMax
     
-    ' iterate forward from x = 0 to x = 1000m, in 0.5m steps
-    ' find the near and far points where the trajectory stays within the target circle
-    ' TODO: improve by finding the roots of the polynomial equation
+    Dim trajectoryData() As Double: ConvertRangesToArray2D trajectoryX.value, trajectoryY.value, trajectoryData
+    Dim energyData() As Double: ConvertRangesToArray2D trajectoryX.value, energyRange.value, energyData
+    Dim nSteps As Long: nSteps = UBound(trajectoryData, 1) - LBound(trajectoryData, 1) + 1
+    Dim tracker As CTrajectoryTracker: Set tracker = TrajectoryTracker(nSteps, yMin, yMax)
     
-    Dim x As Double: x = 0#
+    Dim i As Long
+    For i = LBound(trajectoryData, 1) To UBound(trajectoryData, 1)
+        tracker.TrackTrajectoryAndEnergy trajectoryData(i, 1), trajectoryData(i, 2), energyData(i, 2)
+    Next i
+    
+    'now we can ask the trajectory tracker to find the target crossings, one by one
+    Dim crossingList As New ArrayList
+    tracker.FindCrossings crossingList
+    
+    'and evaluate the point blank range intervals
+    Dim pbrList As New ArrayList
+    tracker.BuildPointBlankRangeList crossingList, pbrList
+    
+    PointBlankRangeListFromBallisticsSolution = OutputTable(pbrList)
     
     
+End Function
 
-End Sub
+Private Function OutputTable(pbrList As ArrayList) As Variant
+
+    Dim output() As Variant
+    ReDim output(1 To pbrList.Count + 1, 1 To 5)
+    Dim i As Long
+    output(1, 1) = "Interval #": output(1, 2) = "Minimum Range(m)": output(1, 3) = "Minimum Range Energy(J)": output(1, 4) = "Maximum Range(m)": output(1, 5) = "Maximum Range Energy(J)"
+    For i = 1 To pbrList.Count
+        Dim pbr As CPBRData: Set pbr = pbrList(i - 1)
+        Dim row As Long: row = i + 1
+        output(row, 1) = CStr(i): output(row, 2) = pbr.MinimumRange.value: output(row, 3) = pbr.EnergyAtMinimumRange.value: output(row, 4) = pbr.MaximumRange.value: output(row, 5) = pbr.EnergyAtMaximumRange.value
+    Next i
+    
+    OutputTable = output
+
+End Function
+
+
+
+
+
 

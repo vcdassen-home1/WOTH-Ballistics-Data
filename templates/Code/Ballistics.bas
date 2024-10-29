@@ -177,7 +177,7 @@ Public Function PointBlankRangeListFromBallisticsSolution(trajectoryX As Range, 
     Dim pbrList As New ArrayList
     tracker.BuildPointBlankRangeList crossingList, pbrList
     
-    PointBlankRangeListFromBallisticsSolution = OutputTable(pbrList)
+    PointBlankRangeListFromBallisticsSolution = OutputTable2(pbrList, trajectoryData(1, 1), trajectoryData(nSteps, 1), yMin, yMax)
     
     
 End Function
@@ -195,6 +195,36 @@ Private Function OutputTable(pbrList As ArrayList) As Variant
     Next i
     
     OutputTable = output
+
+End Function
+
+
+'
+'  build output table
+'
+'               Interval 1
+'   Range(m)  Elevation(cm)  Energy(J)
+Private Function OutputTable2(pbrList As ArrayList, ByVal minRange As Double, ByVal maxRange As Double, ByVal minHeight As Double, ByVal maxHeight As Double) As Variant
+
+    Dim output() As Variant
+    ReDim output(1 To 3, 1 To 3 * (pbrList.Count + 1))
+    
+    output(1, 1) = "Range(m)": output(1, 2) = "Min Elevation(CM)": output(1, 3) = "Max Elevation(CM)"
+    output(2, 1) = minRange: output(2, 2) = minHeight: output(2, 3) = maxHeight
+    output(3, 1) = maxRange: output(3, 2) = minHeight: output(3, 3) = maxHeight
+    
+    Dim col As Long
+    Dim colIndex As Long
+    For colIndex = 1 To pbrList.Count
+        Dim pbr As CPBRData: Set pbr = pbrList(colIndex - 1)
+        col = 3 * colIndex + 1
+        output(1, col) = "Range[" & CStr(colIndex) & "](m)": output(1, col + 1) = "Elevation[" & CStr(colIndex) & "](cm)": output(1, col + 2) = "Energy[" & CStr(colIndex) & "](J)"
+        output(2, col) = pbr.MinimumRange.value: output(2, col + 1) = minHeight: output(2, col + 2) = pbr.EnergyAtMinimumRange.value
+        output(3, col) = pbr.MaximumRange.value: output(3, col + 1) = maxHeight: output(3, col + 2) = pbr.EnergyAtMaximumRange.value
+        
+    Next colIndex
+    
+    OutputTable2 = output
 
 End Function
 
